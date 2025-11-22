@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model sessions {
+  id                String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  user_id           String?
+  title             String
+  duration          Int?                @default(0)
+  status            String
+  audio_source      String
+  created_at        DateTime?           @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime?           @default(now()) @db.Timestamptz(6)
+  completed_at      DateTime?           @db.Timestamptz(6)
+  transcript_chunks transcript_chunks[]
+  transcripts       transcripts[]
+
+  @@index([created_at(sort: Desc)], map: "idx_sessions_created_at")
+  @@index([status], map: "idx_sessions_status")
+  @@index([user_id], map: "idx_sessions_user_id")
+  @@index([user_id], map: "idx_sessions_user_id_text")
+}
+
+model transcripts {
+  id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  session_id String    @db.Uuid
+  full_text  String
+  summary    Json?
+  speakers   String[]
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+  sessions   sessions  @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([session_id], map: "idx_transcripts_session_id")
+}
+
+model transcript_chunks {
+  id          String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  session_id  String    @db.Uuid
+  chunk_index Int
+  text        String
+  timestamp   BigInt
+  confidence  Decimal?  @db.Decimal(3, 2)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  sessions    sessions  @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([session_id, chunk_index], map: "idx_transcript_chunks_chunk_index")
+  @@index([session_id], map: "idx_transcript_chunks_session_id")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model account {
+  id                    String    @id
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime? @db.Timestamptz(6)
+  refreshTokenExpiresAt DateTime? @db.Timestamptz(6)
+  scope                 String?
+  idToken               String?
+  password              String?
+  createdAt             DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime  @default(now()) @db.Timestamptz(6)
+  user                  user      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([providerId, accountId])
+  @@index([providerId, accountId], map: "idx_account_providerId_accountId")
+  @@index([userId], map: "idx_account_userId")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model session {
+  id        String   @id
+  userId    String
+  token     String   @unique
+  expiresAt DateTime @db.Timestamptz(6)
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @db.Timestamptz(6)
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([expiresAt], map: "idx_session_expiresAt")
+  @@index([token], map: "idx_session_token")
+  @@index([userId], map: "idx_session_userId")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user {
+  id            String    @id
+  name          String?
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime  @default(now()) @db.Timestamptz(6)
+  account       account[]
+  session       session[]
+
+  @@index([email], map: "idx_user_email")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime @db.Timestamptz(6)
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([expiresAt], map: "idx_verification_expiresAt")
+  @@index([identifier], map: "idx_verification_identifier")
+}
