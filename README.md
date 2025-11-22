@@ -56,7 +56,7 @@ v2/
 - **Node.js** with Express
 - **Socket.io** for WebSocket server
 - **Google Gemini API** for transcription and summarization
-- **Supabase** (PostgreSQL) for data persistence
+- **Supabase with Prisma** (PostgreSQL) for data persistence with Prisma
 
 ## 📋 Prerequisites
 
