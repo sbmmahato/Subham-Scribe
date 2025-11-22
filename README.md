@@ -1,4 +1,4 @@
-# ScribeAI - AI-Powered Audio Transcription App
+# AI-Powered Audio Transcription App
 
 A full-stack real-time audio transcription tool built with Next.js, Node.js, TypeScript, Supabase, and Google Gemini AI.
 
